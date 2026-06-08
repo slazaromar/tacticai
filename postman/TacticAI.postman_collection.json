@@ -1,0 +1,504 @@
+{
+  "info": {
+    "name": "TacticAI API",
+    "_postman_id": "tacticai-collection-v1",
+    "description": "Colección completa de pruebas para la API de TacticAI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",       "value": "http://localhost:4000/api" },
+    { "key": "token_acceso",   "value": "" },
+    { "key": "token_refresco", "value": "" },
+    { "key": "equipo_id",      "value": "10000000-0000-0000-0000-000000000001" },
+    { "key": "partido_id",     "value": "20000000-0000-0000-0000-000000000001" },
+    { "key": "jugador_id",     "value": "" },
+    { "key": "lesion_id",      "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "POST iniciar sesión (admin)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene tokenAcceso', () => pm.expect(pm.response.json().tokenAcceso).to.be.a('string'));",
+            "pm.test('Usuario tiene rol', () => pm.expect(pm.response.json().usuario.rol).to.be.oneOf(['admin','entrenador','analista']));",
+            "const r = pm.response.json();",
+            "pm.collectionVariables.set('token_acceso', r.tokenAcceso);",
+            "pm.collectionVariables.set('token_refresco', r.tokenRefresco);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"correo\":\"admin@tacticai.com\",\"contrasena\":\"Admin1234!\"}" },
+            "url": "{{base_url}}/autenticacion/iniciar-sesion"
+          }
+        },
+        {
+          "name": "POST iniciar sesión (credenciales erróneas)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"correo\":\"admin@tacticai.com\",\"contrasena\":\"WRONG\"}" },
+            "url": "{{base_url}}/autenticacion/iniciar-sesion"
+          }
+        },
+        {
+          "name": "POST refrescar token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Nuevo tokenAcceso', () => pm.expect(pm.response.json().tokenAcceso).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"tokenRefresco\":\"{{token_refresco}}\"}" },
+            "url": "{{base_url}}/autenticacion/refrescar"
+          }
+        },
+        {
+          "name": "GET /yo — perfil del usuario",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene correo', () => pm.expect(pm.response.json().correo).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/autenticacion/yo"
+          }
+        },
+        {
+          "name": "Sin token → 401",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/jugadores"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Equipos",
+      "item": [
+        {
+          "name": "GET /equipos — lista",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene datos', () => pm.expect(pm.response.json().datos).to.be.an('array'));",
+            "pm.test('Tiene total', () => pm.expect(pm.response.json().total).to.be.a('number'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/equipos"
+          }
+        },
+        {
+          "name": "GET /equipos/:id — detalle",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene nombre', () => pm.expect(pm.response.json().nombre).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/equipos/{{equipo_id}}"
+          }
+        },
+        {
+          "name": "POST /equipos — crear",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Tiene id', () => pm.expect(pm.response.json().id).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"nombre\":\"Equipo Test Postman\",\"formacion\":\"4-3-3\",\"ciudad\":\"Barcelona\"}" },
+            "url": "{{base_url}}/equipos"
+          }
+        },
+        {
+          "name": "POST /equipos — nombre requerido → 400",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"formacion\":\"4-3-3\"}" },
+            "url": "{{base_url}}/equipos"
+          }
+        },
+        {
+          "name": "PUT /equipos/:id — actualizar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"nombre\":\"FC Barcelona\",\"formacion\":\"4-3-3\"}" },
+            "url": "{{base_url}}/equipos/{{equipo_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jugadores",
+      "item": [
+        {
+          "name": "GET /jugadores — lista",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Array de datos', () => pm.expect(pm.response.json().datos).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": { "raw": "{{base_url}}/jugadores?limite=10", "host": ["{{base_url}}"], "path": ["jugadores"], "query": [{ "key": "limite", "value": "10" }] }
+          }
+        },
+        {
+          "name": "GET /jugadores — filtro por posición",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Todos son PO', () => { const data = pm.response.json().datos; data.forEach(j => pm.expect(j.posicion).to.equal('PO')); });"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": { "raw": "{{base_url}}/jugadores?posicion=PO", "host": ["{{base_url}}"], "path": ["jugadores"], "query": [{ "key": "posicion", "value": "PO" }] }
+          }
+        },
+        {
+          "name": "POST /jugadores — crear",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Tiene id', () => pm.expect(pm.response.json().id).to.be.a('string'));",
+            "pm.collectionVariables.set('jugador_id', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"nombre\":\"Test Jugador\",\"posicion\":\"MC\",\"equipo_id\":\"{{equipo_id}}\",\"rol_equipo\":\"rotacion\",\"puntuacion_forma\":7.5,\"puntuacion_general\":75}" },
+            "url": "{{base_url}}/jugadores"
+          }
+        },
+        {
+          "name": "GET /jugadores/:id — detalle",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene nombre', () => pm.expect(pm.response.json().nombre).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/jugadores/{{jugador_id}}"
+          }
+        },
+        {
+          "name": "PUT /jugadores/:id — actualizar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"nombre\":\"Test Jugador Updated\",\"posicion\":\"MC\",\"equipo_id\":\"{{equipo_id}}\",\"rol_equipo\":\"titular\",\"puntuacion_forma\":8.0,\"puntuacion_general\":82,\"esta_lesionado\":false,\"esta_sancionado\":false}" },
+            "url": "{{base_url}}/jugadores/{{jugador_id}}"
+          }
+        },
+        {
+          "name": "GET /jugadores/:id/lesiones — historial vacío",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Es array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/jugadores/{{jugador_id}}/lesiones"
+          }
+        },
+        {
+          "name": "POST /jugadores/:id/lesiones — registrar lesión",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Tiene id', () => pm.expect(pm.response.json().id).to.be.a('string'));",
+            "pm.collectionVariables.set('lesion_id', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"descripcion\":\"Rotura de ligamentos\",\"fecha_inicio\":\"2026-01-15\"}" },
+            "url": "{{base_url}}/jugadores/{{jugador_id}}/lesiones"
+          }
+        },
+        {
+          "name": "GET /jugadores/:id/lesiones — con registro",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene registros', () => pm.expect(pm.response.json().length).to.be.greaterThan(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/jugadores/{{jugador_id}}/lesiones"
+          }
+        },
+        {
+          "name": "DELETE /jugadores/:id/lesiones/:lesionId",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/jugadores/{{jugador_id}}/lesiones/{{lesion_id}}"
+          }
+        },
+        {
+          "name": "DELETE /jugadores/:id — eliminar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204 o 200', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/jugadores/{{jugador_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Partidos",
+      "item": [
+        {
+          "name": "GET /partidos — lista",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene datos', () => pm.expect(pm.response.json().datos).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/partidos"
+          }
+        },
+        {
+          "name": "GET /partidos — filtro por estado",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": { "raw": "{{base_url}}/partidos?estado=programado", "host": ["{{base_url}}"], "path": ["partidos"], "query": [{ "key": "estado", "value": "programado" }] }
+          }
+        },
+        {
+          "name": "GET /partidos/:id — detalle",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene estado', () => pm.expect(pm.response.json().estado).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/partidos/{{partido_id}}"
+          }
+        },
+        {
+          "name": "POST /partidos — equipos distintos requeridos",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400/422', () => pm.expect(pm.response.code).to.be.oneOf([400, 422]));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"equipo_local_id\":\"{{equipo_id}}\",\"equipo_visitante_id\":\"{{equipo_id}}\",\"fecha_partido\":\"2026-12-01T20:00:00\"}" },
+            "url": "{{base_url}}/partidos"
+          }
+        },
+        {
+          "name": "GET /partidos — estado derivado por fecha",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Estado correcto', () => {",
+            "  const partidos = pm.response.json().datos;",
+            "  const hoy = new Date();",
+            "  partidos.forEach(p => {",
+            "    const fecha = new Date(p.fecha_partido);",
+            "    if (fecha < hoy && p.estado !== 'cancelado') {",
+            "      pm.expect(p.estado).to.equal('finalizado');",
+            "    }",
+            "  });",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/partidos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alineaciones",
+      "item": [
+        {
+          "name": "POST /alineaciones/recomendar",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Tiene jugadores', () => pm.expect(pm.response.json().jugadores).to.be.an('array'));",
+            "pm.test('11 titulares', () => {",
+            "  const titulares = pm.response.json().jugadores.filter(j => j.es_titular);",
+            "  pm.expect(titulares.length).to.equal(11);",
+            "});",
+            "pm.test('Cada jugador tiene desglose', () => {",
+            "  pm.response.json().jugadores.forEach(j => pm.expect(j.desglose_puntuacion).to.be.an('object'));",
+            "});"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"partidoId\":\"{{partido_id}}\",\"equipoId\":\"{{equipo_id}}\",\"formacion\":\"4-3-3\"}" },
+            "url": "{{base_url}}/alineaciones/recomendar"
+          }
+        },
+        {
+          "name": "POST /alineaciones/recomendar — formación 4-4-2",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Formación correcta', () => pm.expect(pm.response.json().formacion).to.equal('4-4-2'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"partidoId\":\"{{partido_id}}\",\"equipoId\":\"{{equipo_id}}\",\"formacion\":\"4-4-2\"}" },
+            "url": "{{base_url}}/alineaciones/recomendar"
+          }
+        },
+        {
+          "name": "GET /alineaciones — por partido",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": { "raw": "{{base_url}}/alineaciones?partidoId={{partido_id}}", "host": ["{{base_url}}"], "path": ["alineaciones"], "query": [{ "key": "partidoId", "value": "{{partido_id}}" }] }
+          }
+        },
+        {
+          "name": "POST /alineaciones/recomendar — sin token → 401",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"partidoId\":\"{{partido_id}}\",\"equipoId\":\"{{equipo_id}}\",\"formacion\":\"4-3-3\"}" },
+            "url": "{{base_url}}/alineaciones/recomendar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invitaciones",
+      "item": [
+        {
+          "name": "GET /invitaciones — lista",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Es array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }],
+            "url": "{{base_url}}/invitaciones"
+          }
+        },
+        {
+          "name": "POST /invitaciones — enviar invitación",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Tiene expiraEn', () => pm.expect(pm.response.json().expiraEn).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"correo\":\"analista.test@ejemplo.com\"}" },
+            "url": "{{base_url}}/invitaciones"
+          }
+        },
+        {
+          "name": "POST /invitaciones — correo inválido → 400",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_acceso}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"correo\":\"no-es-un-correo\"}" },
+            "url": "{{base_url}}/invitaciones"
+          }
+        },
+        {
+          "name": "POST /invitaciones/aceptar — token inválido → 400",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"token\":\"token_invalido\",\"nombre_usuario\":\"nuevo_analista\",\"contrasena\":\"Pass1234!\"}" },
+            "url": "{{base_url}}/invitaciones/aceptar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Control de acceso",
+      "item": [
+        {
+          "name": "Analista no puede guardar alineación → 403",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "// Este test debe ejecutarse con un token de rol analista",
+            "// pm.test('Status 403', () => pm.response.to.have.status(403));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_analista}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"partidoId\":\"{{partido_id}}\",\"equipoId\":\"{{equipo_id}}\",\"formacion\":\"4-3-3\",\"jugadores\":[]}" },
+            "url": "{{base_url}}/alineaciones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Estado ok', () => pm.expect(pm.response.json().estado).to.equal('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:4000/health"
+          }
+        }
+      ]
+    }
+  ]
+}

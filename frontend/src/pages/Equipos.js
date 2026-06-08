@@ -2,12 +2,16 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import servicioEquipo from '../services/equipo.servicio';
 import { toast }      from 'react-toastify';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { usarAutenticacion } from '../context/ContextoAutenticacion';
 
 const FORMACIONES = ['4-3-3','4-4-2','4-2-3-1','3-5-2','5-3-2'];
 const FORMULARIO_VACIO = { nombre: '', nombre_corto: '', formacion: '4-3-3', ciudad: '', pais: '' };
 
 export default function Equipos() {
   const { t } = useTranslation();
+  const { usuario } = usarAutenticacion();
+  const puedeEditar = usuario?.rol === 'entrenador' || usuario?.rol === 'admin';
   const [equipos, setEquipos]       = useState([]);
   const [total, setTotal]           = useState(0);
   const [cargando, setCargando]     = useState(true);
@@ -39,25 +43,25 @@ export default function Equipos() {
   const manejarGuardado = async (e) => {
     e.preventDefault(); setGuardando(true);
     try {
-      if (editando) { await servicioEquipo.actualizar(editando.id, formulario); toast.success(t('teams.toast.updated')); }
-      else          { await servicioEquipo.crear(formulario);                   toast.success(t('teams.toast.created')); }
+      if (editando) { await servicioEquipo.actualizar(editando.id, formulario); toast.success(t('equipos.toast.updated')); }
+      else          { await servicioEquipo.crear(formulario);                   toast.success(t('equipos.toast.created')); }
       setModalAbierto(false); cargarEquipos();
     } catch { /* manejado */ } finally { setGuardando(false); }
   };
 
   const manejarEliminacion = async (id) => {
-    if (!window.confirm(t('teams.toast.confirmDelete'))) return;
-    try { await servicioEquipo.eliminar(id); toast.success(t('teams.toast.deleted')); cargarEquipos(); } catch { /* manejado */ }
+    if (!window.confirm(t('equipos.toast.confirmDelete'))) return;
+    try { await servicioEquipo.eliminar(id); toast.success(t('equipos.toast.deleted')); cargarEquipos(); } catch { /* manejado */ }
   };
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">{t('teams.title')}</h1>
-          <p className="page-subtitle">{t('teams.subtitle', { count: total })}</p>
+          <h1 className="page-title">{t('equipos.title')}</h1>
+          <p className="page-subtitle">{t('equipos.subtitle', { count: total })}</p>
         </div>
-        <button className="btn btn-primary" onClick={abrirCrear}>{t('teams.addTeam')}</button>
+        {puedeEditar && <button className="btn btn-primary" onClick={abrirCrear}>{t('equipos.addTeam')}</button>}
       </div>
 
       {cargando ? (
@@ -78,10 +82,12 @@ export default function Equipos() {
                 {eq.pais      && <span>{eq.pais}</span>}
                 {eq.formacion && <span className="badge badge-blue">{eq.formacion}</span>}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => abrirEditar(eq)}>✏️ {t('common.edit')}</button>
-                <button className="btn btn-danger btn-sm"    onClick={() => manejarEliminacion(eq.id)}>🗑️</button>
-              </div>
+              {puedeEditar && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => abrirEditar(eq)}>{t('comun.edit')}</button>
+                  <button className="btn btn-danger btn-sm"    onClick={() => manejarEliminacion(eq.id)}><DeleteIcon fontSize="small" /></button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -91,35 +97,35 @@ export default function Equipos() {
       {modalAbierto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
           <div className="card" style={{ width: '100%', maxWidth: 440 }}>
-            <h3 style={{ marginBottom: 20 }}>{editando ? t('teams.modal.editTitle') : t('teams.modal.addTitle')}</h3>
+            <h3 style={{ marginBottom: 20 }}>{editando ? t('equipos.modal.editTitle') : t('equipos.modal.addTitle')}</h3>
             <form onSubmit={manejarGuardado}>
               <div className="form-group">
-                <label className="form-label">{t('teams.modal.name')}</label>
+                <label className="form-label">{t('equipos.modal.name')}</label>
                 <input className="form-input" required value={formulario.nombre} onChange={(e) => setFormulario({ ...formulario, nombre: e.target.value })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
-                  <label className="form-label">{t('teams.modal.shortName')}</label>
+                  <label className="form-label">{t('equipos.modal.shortName')}</label>
                   <input className="form-input" maxLength={10} value={formulario.nombre_corto} onChange={(e) => setFormulario({ ...formulario, nombre_corto: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('teams.modal.formation')}</label>
+                  <label className="form-label">{t('equipos.modal.formation')}</label>
                   <select className="form-select" value={formulario.formacion} onChange={(e) => setFormulario({ ...formulario, formacion: e.target.value })}>
                     {FORMACIONES.map((f) => <option key={f}>{f}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('teams.modal.city')}</label>
+                  <label className="form-label">{t('equipos.modal.city')}</label>
                   <input className="form-input" value={formulario.ciudad} onChange={(e) => setFormulario({ ...formulario, ciudad: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('teams.modal.country')}</label>
+                  <label className="form-label">{t('equipos.modal.country')}</label>
                   <input className="form-input" value={formulario.pais} onChange={(e) => setFormulario({ ...formulario, pais: e.target.value })} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setModalAbierto(false)}>{t('common.cancel')}</button>
-                <button type="submit"  className="btn btn-primary"   style={{ flex: 1 }} disabled={guardando}>{guardando ? t('common.saving') : editando ? t('common.update') : t('common.create')}</button>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setModalAbierto(false)}>{t('comun.cancel')}</button>
+                <button type="submit"  className="btn btn-primary"   style={{ flex: 1 }} disabled={guardando}>{guardando ? t('comun.saving') : editando ? t('comun.update') : t('comun.create')}</button>
               </div>
             </form>
           </div>

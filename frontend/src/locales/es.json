@@ -1,5 +1,5 @@
 {
-  "common": {
+  "comun": {
     "appName": "TacticAI",
     "tagline": "Recomendaciones inteligentes de alineaciones de fútbol",
     "loading": "Cargando…",
@@ -20,14 +20,15 @@
     "signOut": "Cerrar sesión",
     "viewAll": "Ver todo"
   },
-  "nav": {
-    "dashboard": "Panel",
-    "matches": "Partidos",
-    "players": "Jugadores",
-    "teams": "Equipos",
-    "toggleSidebar": "Mostrar/ocultar menú"
+  "navegacion": {
+    "panel": "Panel",
+    "partidos": "Partidos",
+    "jugadores": "Jugadores",
+    "equipos": "Equipos",
+    "alternarBarra": "Mostrar/ocultar menú",
+    "invitaciones": "Invitaciones"
   },
-  "auth": {
+  "autenticacion": {
     "signIn": "Iniciar sesión",
     "signingIn": "Iniciando sesión…",
     "email": "Correo electrónico",
@@ -35,9 +36,9 @@
     "emailPlaceholder": "entrenador@tuclub.com",
     "fillAllFields": "Por favor, completa todos los campos",
     "loginFailed": "Error al iniciar sesión",
-    "demoCredentials": "Credenciales demo: admin@tacticai.com / Admin1234!"
+    "demoCredentials": "Demo — entrenador@tacticai.com / Admin1234! · analista@tacticai.com / Admin1234!"
   },
-  "dashboard": {
+  "panel": {
     "title": "Panel",
     "subtitle": "Bienvenido de nuevo — aquí tienes tu resumen",
     "totalPlayers": "Jugadores totales",
@@ -56,7 +57,7 @@
     "getLineup": "Generar alineación",
     "vs": "vs"
   },
-  "players": {
+  "jugadores": {
     "title": "Jugadores",
     "subtitle": "{{count}} jugadores registrados",
     "addPlayer": "+ Añadir jugador",
@@ -75,7 +76,13 @@
       "nationality": "Nacionalidad",
       "contractUntil": "Contrato hasta",
       "formRating": "Forma (1-10)",
-      "overallRating": "Valoración general (1-100)"
+      "overallRating": "Valoración general (1-100)",
+      "status": "Estado"
+    },
+    "status": {
+      "normal": "Disponible",
+      "lesionado": "Lesionado",
+      "sancionado": "Sancionado"
     },
     "toast": {
       "created": "Jugador creado",
@@ -84,13 +91,43 @@
       "confirmDelete": "¿Eliminar este jugador?"
     },
     "roles": {
-      "titular": "titular",
-      "rotacion": "rotación",
-      "reserva": "reserva",
-      "cantera": "cantera"
+      "titular": "Titular",
+      "rotacion": "Rotación",
+      "reserva": "Reserva",
+      "cantera": "Cantera"
+    },
+    "positions": {
+      "PO":  "Portero",
+      "DFC": "Central",
+      "LI":  "Lateral izq.",
+      "LD":  "Lateral der.",
+      "MCD": "Mediocentro def.",
+      "MC":  "Centrocampista",
+      "MCO": "Mediapunta",
+      "MI":  "Interior izq.",
+      "MD":  "Interior der.",
+      "EI":  "Extremo izq.",
+      "ED":  "Extremo der.",
+      "SD":  "Segundo delantero",
+      "DC":  "Delantero centro"
+    },
+    "positionsShort": {
+      "PO":  "PO",
+      "DFC": "DFC",
+      "LI":  "LI",
+      "LD":  "LD",
+      "MCD": "MCD",
+      "MC":  "MC",
+      "MCO": "MCO",
+      "MI":  "MI",
+      "MD":  "MD",
+      "EI":  "EI",
+      "ED":  "ED",
+      "SD":  "SD",
+      "DC":  "DC"
     }
   },
-  "teams": {
+  "equipos": {
     "title": "Equipos",
     "subtitle": "{{count}} equipos registrados",
     "addTeam": "+ Añadir equipo",
@@ -110,7 +147,7 @@
       "confirmDelete": "¿Eliminar este equipo?"
     }
   },
-  "matches": {
+  "partidos": {
     "title": "Partidos",
     "subtitle": "{{count}} partidos registrados",
     "schedule": "+ Programar partido",
@@ -152,7 +189,7 @@
       "cancelado": "cancelado"
     }
   },
-  "lineup": {
+  "alineacion": {
     "backToMatches": "Volver a partidos",
     "title": "Recomendación de alineación",
     "matchNotFound": "Partido no encontrado.",
@@ -166,7 +203,7 @@
     "generated": "Alineación generada con éxito",
     "saved": "Alineación guardada",
     "scoringTitle": "Fórmula de puntuación",
-    "scoringText": "Puntuación = <b>40%</b> Forma + <b>30%</b> Rol en el equipo + <b>20%</b> Estabilidad de contrato + <b>10%</b> Valoración general. Los jugadores lesionados o sancionados se excluyen automáticamente.",
+    "scoringText": "Puntuación = <b>40%</b> Forma + <b>30%</b> Rol en el equipo + <b>20%</b> Valoración general + <b>10%</b> Estabilidad de contrato. Los jugadores lesionados o sancionados se excluyen automáticamente.",
     "starters": "Titulares",
     "bench": "Banquillo",
     "avgScore": "Puntuación media",
@@ -174,17 +211,68 @@
     "listView": "Vista de lista",
     "startingXI": "Once titular",
     "benchHeader": "Banquillo",
-    "emptyHint": "Selecciona un equipo y una formación, luego pulsa <b>Generar alineación</b>."
+    "emptyHint": "Selecciona un equipo y una formación, luego pulsa <b>Generar alineación</b>.",
+    "exportPNG": "Exportar PNG",
+    "exportPDF": "Exportar PDF",
+    "cargada": "Alineación guardada cargada"
   },
-  "playerCard": {
-    "form": "Forma",
-    "injured": "Lesionado",
-    "suspended": "Sancionado",
-    "recommendationScore": "Puntuación de recomendación",
-    "yrs": "años",
-    "until": "Hasta"
+  "tarjetaJugador": {
+    "forma": "Forma",
+    "lesionado": "Lesionado",
+    "sancionado": "Sancionado",
+    "puntuacionRecomendacion": "Puntuación de recomendación",
+    "desglose": "Desglose",
+    "factoresPuntuacion": {
+      "forma": "Forma",
+      "rol": "Rol en equipo",
+      "contrato": "Contrato",
+      "general": "Valoración global"
+    },
+    "anos": "años",
+    "hasta": "Hasta",
+    "val": "VAL"
   },
-  "notFound": {
+  "lesiones": {
+    "title": "Historial de lesiones — {{nombre}}",
+    "viewHistory": "Lesiones",
+    "noHistory": "Sin lesiones registradas.",
+    "addRecord": "Registrar lesión",
+    "registered": "Lesión registrada",
+    "deleted": "Registro eliminado",
+    "confirmDelete": "¿Eliminar este registro?",
+    "save": "Guardar",
+    "th": {
+      "description": "Descripción",
+      "start": "Fecha inicio",
+      "end": "Fecha alta"
+    }
+  },
+  "invitaciones": {
+    "title": "Invitaciones",
+    "subtitle": "Invita a analistas externos con acceso de solo lectura",
+    "invite": "Invitar analista",
+    "emailPlaceholder": "analista@club.com",
+    "sendBtn": "Enviar invitación",
+    "note": "El analista recibirá un enlace válido por 48 horas.",
+    "sent": "Invitación enviada",
+    "none": "No hay invitaciones.",
+    "used": "Aceptada",
+    "expired": "Caducada",
+    "pending": "Pendiente",
+    "acceptTitle": "Crear tu cuenta",
+    "acceptSubtitle": "Has sido invitado como analista. Elige un nombre de usuario y contraseña.",
+    "createAccount": "Crear cuenta",
+    "welcomeToast": "Cuenta creada. ¡Bienvenido!",
+    "invalidToken": "Enlace de invitación no válido.",
+    "th": {
+      "email": "Correo",
+      "role": "Rol",
+      "sentBy": "Invitado por",
+      "expires": "Caduca",
+      "status": "Estado"
+    }
+  },
+  "noEncontrado": {
     "title": "404 — Página no encontrada",
     "subtitle": "La página que buscas no existe.",
     "goDashboard": "Ir al panel"

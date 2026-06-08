@@ -10,6 +10,8 @@ import Jugadores                from './pages/Jugadores';
 import Equipos                  from './pages/Equipos';
 import Partidos                 from './pages/Partidos';
 import RecomendacionAlineacion  from './pages/RecomendacionAlineacion';
+import Invitaciones             from './pages/Invitaciones';
+import AceptarInvitacion        from './pages/AceptarInvitacion';
 import NoEncontrado             from './pages/NoEncontrado';
 
 export default function Aplicacion() {
@@ -18,7 +20,8 @@ export default function Aplicacion() {
       <ProveedorAutenticacion>
         <Routes>
           {/* Pública */}
-          <Route path="/login" element={<InicioSesion />} />
+          <Route path="/login"   element={<InicioSesion />} />
+          <Route path="/registro" element={<AceptarInvitacion />} />
 
           {/* Protegidas */}
           <Route element={<RutaProtegida />}>
@@ -28,7 +31,8 @@ export default function Aplicacion() {
               <Route path="/jugadores" element={<Jugadores />} />
               <Route path="/equipos"   element={<Equipos />} />
               <Route path="/partidos"  element={<Partidos />} />
-              <Route path="/alineacion/:matchId" element={<RecomendacionAlineacion />} />
+              <Route path="/alineacion/:idPartido" element={<RecomendacionAlineacion />} />
+              <Route path="/invitaciones"        element={<Invitaciones />} />
             </Route>
           </Route>
 

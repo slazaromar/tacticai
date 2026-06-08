@@ -16,6 +16,8 @@ const rutasJugador       = require('./routes/jugador.rutas');
 const rutasEquipo        = require('./routes/equipo.rutas');
 const rutasPartido       = require('./routes/partido.rutas');
 const rutasAlineacion    = require('./routes/alineacion.rutas');
+const rutasLesion        = require('./routes/lesion.rutas');
+const rutasInvitacion    = require('./routes/invitacion.rutas');
 
 const app    = express();
 const PUERTO = process.env.PORT || 4000;
@@ -38,13 +40,14 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 
 app.get('/health', (_req, res) => res.json({ estado: 'ok', marca_tiempo: new Date().toISOString() }));
 
-app.use('/api/autenticacion', rutasAutenticacion);
-app.use('/api/jugadores',     rutasJugador);
-app.use('/api/equipos',       rutasEquipo);
-app.use('/api/partidos',      rutasPartido);
-app.use('/api/alineaciones',  rutasAlineacion);
+app.use('/api/autenticacion',                     rutasAutenticacion);
+app.use('/api/jugadores',                          rutasJugador);
+app.use('/api/jugadores/:jugadorId/lesiones',      rutasLesion);
+app.use('/api/equipos',                            rutasEquipo);
+app.use('/api/partidos',                           rutasPartido);
+app.use('/api/alineaciones',                       rutasAlineacion);
+app.use('/api/invitaciones',                       rutasInvitacion);
 
-// 404
 app.use((_req, res) => res.status(404).json({ mensaje: 'Ruta no encontrada' }));
 
 app.use(gestionErrores);

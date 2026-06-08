@@ -69,18 +69,18 @@ async function crear(req, res, next) {
   try {
     const {
       nombre, posicion, equipo_id, rol_equipo, edad, nacionalidad,
-      contrato_hasta, puntuacion_forma, puntuacion_general, valor_mercado,
+      contrato_hasta, puntuacion_forma, puntuacion_general,
     } = req.body;
 
     const { rows } = await consultar(
       `INSERT INTO jugadores
          (nombre, posicion, equipo_id, rol_equipo, edad, nacionalidad,
-          contrato_hasta, puntuacion_forma, puntuacion_general, valor_mercado)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          contrato_hasta, puntuacion_forma, puntuacion_general)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
       [nombre, posicion, equipo_id || null, rol_equipo || 'rotacion', edad || null,
        nacionalidad || null, contrato_hasta || null, puntuacion_forma || null,
-       puntuacion_general || null, valor_mercado || null]
+       puntuacion_general || null]
     );
 
     res.status(201).json(rows[0]);
@@ -91,7 +91,7 @@ async function actualizar(req, res, next) {
   try {
     const {
       nombre, posicion, equipo_id, rol_equipo, edad, nacionalidad,
-      contrato_hasta, puntuacion_forma, puntuacion_general, valor_mercado,
+      contrato_hasta, puntuacion_forma, puntuacion_general,
       esta_lesionado, esta_sancionado,
     } = req.body;
 
@@ -99,13 +99,12 @@ async function actualizar(req, res, next) {
       `UPDATE jugadores
        SET nombre=$1, posicion=$2, equipo_id=$3, rol_equipo=$4, edad=$5,
            nacionalidad=$6, contrato_hasta=$7, puntuacion_forma=$8,
-           puntuacion_general=$9, valor_mercado=$10,
-           esta_lesionado=$11, esta_sancionado=$12
-       WHERE id = $13
+           puntuacion_general=$9, esta_lesionado=$10, esta_sancionado=$11
+       WHERE id = $12
        RETURNING *`,
       [nombre, posicion, equipo_id || null, rol_equipo, edad || null, nacionalidad || null,
        contrato_hasta || null, puntuacion_forma || null, puntuacion_general || null,
-       valor_mercado || null, esta_lesionado ?? false, esta_sancionado ?? false, req.params.id]
+       esta_lesionado ?? false, esta_sancionado ?? false, req.params.id]
     );
 
     if (!rows[0]) return res.status(404).json({ mensaje: 'Jugador no encontrado' });

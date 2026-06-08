@@ -1,5 +1,5 @@
 {
-  "common": {
+  "comun": {
     "appName": "TacticAI",
     "tagline": "Intelligent Football Lineup Recommendations",
     "loading": "Loading…",
@@ -20,14 +20,15 @@
     "signOut": "Sign out",
     "viewAll": "View all"
   },
-  "nav": {
-    "dashboard": "Dashboard",
-    "matches": "Matches",
-    "players": "Players",
-    "teams": "Teams",
-    "toggleSidebar": "Toggle sidebar"
+  "navegacion": {
+    "panel": "Dashboard",
+    "partidos": "Matches",
+    "jugadores": "Players",
+    "equipos": "Teams",
+    "alternarBarra": "Toggle sidebar",
+    "invitaciones": "Invitations"
   },
-  "auth": {
+  "autenticacion": {
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "email": "Email address",
@@ -35,9 +36,9 @@
     "emailPlaceholder": "coach@yourclub.com",
     "fillAllFields": "Please fill in all fields",
     "loginFailed": "Login failed",
-    "demoCredentials": "Demo credentials: admin@tacticai.com / Admin1234!"
+    "demoCredentials": "Demo — entrenador@tacticai.com / Admin1234! · analista@tacticai.com / Admin1234!"
   },
-  "dashboard": {
+  "panel": {
     "title": "Dashboard",
     "subtitle": "Welcome back — here's your overview",
     "totalPlayers": "Total Players",
@@ -56,7 +57,7 @@
     "getLineup": "Get Lineup",
     "vs": "vs"
   },
-  "players": {
+  "jugadores": {
     "title": "Players",
     "subtitle": "{{count}} players registered",
     "addPlayer": "+ Add Player",
@@ -75,7 +76,13 @@
       "nationality": "Nationality",
       "contractUntil": "Contract until",
       "formRating": "Form rating (1-10)",
-      "overallRating": "Overall rating (1-100)"
+      "overallRating": "Overall rating (1-100)",
+      "status": "Status"
+    },
+    "status": {
+      "normal": "Available",
+      "lesionado": "Injured",
+      "sancionado": "Suspended"
     },
     "toast": {
       "created": "Player created",
@@ -84,13 +91,43 @@
       "confirmDelete": "Delete this player?"
     },
     "roles": {
-      "titular": "starter",
-      "rotacion": "rotation",
-      "reserva": "reserve",
-      "cantera": "youth"
+      "titular": "Starter",
+      "rotacion": "Rotation",
+      "reserva": "Reserve",
+      "cantera": "Youth"
+    },
+    "positions": {
+      "PO":  "Goalkeeper",
+      "DFC": "Centre-back",
+      "LI":  "Left back",
+      "LD":  "Right back",
+      "MCD": "Def. midfielder",
+      "MC":  "Midfielder",
+      "MCO": "Att. midfielder",
+      "MI":  "Left midfielder",
+      "MD":  "Right midfielder",
+      "EI":  "Left winger",
+      "ED":  "Right winger",
+      "SD":  "Centre forward",
+      "DC":  "Striker"
+    },
+    "positionsShort": {
+      "PO":  "GK",
+      "DFC": "CB",
+      "LI":  "LB",
+      "LD":  "RB",
+      "MCD": "CDM",
+      "MC":  "CM",
+      "MCO": "CAM",
+      "MI":  "LM",
+      "MD":  "RM",
+      "EI":  "LW",
+      "ED":  "RW",
+      "SD":  "CF",
+      "DC":  "ST"
     }
   },
-  "teams": {
+  "equipos": {
     "title": "Teams",
     "subtitle": "{{count}} teams registered",
     "addTeam": "+ Add Team",
@@ -110,7 +147,7 @@
       "confirmDelete": "Delete this team?"
     }
   },
-  "matches": {
+  "partidos": {
     "title": "Matches",
     "subtitle": "{{count}} matches registered",
     "schedule": "+ Schedule Match",
@@ -152,7 +189,7 @@
       "cancelado": "cancelled"
     }
   },
-  "lineup": {
+  "alineacion": {
     "backToMatches": "Back to Matches",
     "title": "Lineup Recommendation",
     "matchNotFound": "Match not found.",
@@ -166,7 +203,7 @@
     "generated": "Lineup generated successfully",
     "saved": "Lineup saved",
     "scoringTitle": "Scoring formula",
-    "scoringText": "Score = <b>40%</b> Form Rating + <b>30%</b> Team Role + <b>20%</b> Contract Stability + <b>10%</b> Overall Rating. Injured and suspended players are automatically excluded.",
+    "scoringText": "Score = <b>40%</b> Form Rating + <b>30%</b> Team Role + <b>20%</b> Overall Rating + <b>10%</b> Contract Stability. Injured and suspended players are automatically excluded.",
     "starters": "Starters",
     "bench": "Bench",
     "avgScore": "Avg Score",
@@ -174,17 +211,68 @@
     "listView": "List View",
     "startingXI": "Starting XI",
     "benchHeader": "Bench",
-    "emptyHint": "Select a team and formation, then click <b>Generate Lineup</b>."
+    "emptyHint": "Select a team and formation, then click <b>Generate Lineup</b>.",
+    "exportPNG": "Export PNG",
+    "exportPDF": "Export PDF",
+    "cargada": "Saved lineup loaded"
   },
-  "playerCard": {
-    "form": "Form",
-    "injured": "Injured",
-    "suspended": "Suspended",
-    "recommendationScore": "Recommendation score",
-    "yrs": "yrs",
-    "until": "Until"
+  "tarjetaJugador": {
+    "forma": "Form",
+    "lesionado": "Injured",
+    "sancionado": "Suspended",
+    "puntuacionRecomendacion": "Recommendation score",
+    "desglose": "Breakdown",
+    "factoresPuntuacion": {
+      "forma": "Form",
+      "rol": "Team role",
+      "contrato": "Contract",
+      "general": "Overall rating"
+    },
+    "anos": "yrs",
+    "hasta": "Until",
+    "val": "OVR"
   },
-  "notFound": {
+  "lesiones": {
+    "title": "Injury history — {{nombre}}",
+    "viewHistory": "Injuries",
+    "noHistory": "No injuries recorded.",
+    "addRecord": "Log injury",
+    "registered": "Injury logged",
+    "deleted": "Record deleted",
+    "confirmDelete": "Delete this record?",
+    "save": "Save",
+    "th": {
+      "description": "Description",
+      "start": "Start date",
+      "end": "Return date"
+    }
+  },
+  "invitaciones": {
+    "title": "Invitations",
+    "subtitle": "Invite external analysts with read-only access",
+    "invite": "Invite analyst",
+    "emailPlaceholder": "analyst@club.com",
+    "sendBtn": "Send invitation",
+    "note": "The analyst will receive a link valid for 48 hours.",
+    "sent": "Invitation sent",
+    "none": "No invitations yet.",
+    "used": "Accepted",
+    "expired": "Expired",
+    "pending": "Pending",
+    "acceptTitle": "Create your account",
+    "acceptSubtitle": "You have been invited as an analyst. Choose a username and password.",
+    "createAccount": "Create account",
+    "welcomeToast": "Account created. Welcome!",
+    "invalidToken": "Invalid invitation link.",
+    "th": {
+      "email": "Email",
+      "role": "Role",
+      "sentBy": "Invited by",
+      "expires": "Expires",
+      "status": "Status"
+    }
+  },
+  "noEncontrado": {
     "title": "404 — Page not found",
     "subtitle": "The page you are looking for doesn't exist.",
     "goDashboard": "Go to Dashboard"

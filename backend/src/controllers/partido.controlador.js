@@ -10,8 +10,8 @@ async function obtenerTodos(req, res, next) {
 
     const sql = `
       SELECT p.*,
-             el.nombre AS nombre_equipo_local, el.nombre_corto AS local_corto,
-             ev.nombre AS nombre_equipo_visitante, ev.nombre_corto AS visitante_corto,
+             CASE WHEN p.estado = 'programado' AND p.fecha_partido < NOW()
+                  THEN 'finalizado' ELSE p.estado END AS estado,
              json_build_object('id', el.id, 'nombre', el.nombre) AS equipo_local,
              json_build_object('id', ev.id, 'nombre', ev.nombre) AS equipo_visitante
       FROM partidos p
@@ -37,6 +37,8 @@ async function obtenerPorId(req, res, next) {
   try {
     const { rows } = await consultar(
       `SELECT p.*,
+              CASE WHEN p.estado = 'programado' AND p.fecha_partido < NOW()
+                   THEN 'finalizado' ELSE p.estado END AS estado,
               json_build_object('id', el.id, 'nombre', el.nombre, 'formacion', el.formacion) AS equipo_local,
               json_build_object('id', ev.id, 'nombre', ev.nombre, 'formacion', ev.formacion) AS equipo_visitante
        FROM partidos p

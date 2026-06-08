@@ -99,15 +99,5 @@
 }
 
 .userArea { display: flex; align-items: center; gap: 14px; }
-.userInfo {
-  font-size: 0.82rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-card2);
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border-light);
-}
 
 .content { flex: 1; overflow-y: auto; padding: 28px 32px; }

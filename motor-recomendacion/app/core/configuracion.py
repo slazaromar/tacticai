@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Configuracion(BaseSettings):
@@ -17,14 +17,13 @@ class Configuracion(BaseSettings):
     # Pesos del algoritmo de recomendación (deben sumar 1.0)
     PESO_FORMA:     float = 0.40
     PESO_ROL:       float = 0.30
-    PESO_CONTRATO:  float = 0.20
-    PESO_GENERAL:   float = 0.10
+    PESO_GENERAL:   float = 0.20
+    PESO_CONTRATO:  float = 0.10
 
     # Tamaño del banquillo
     TAMANO_BANQUILLO: int = 7
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 configuracion = Configuracion()

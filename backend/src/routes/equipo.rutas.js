@@ -21,6 +21,6 @@ router.put('/:id',
   validar, ctrl.actualizar
 );
 
-router.delete('/:id', autorizar('admin'), ctrl.eliminar);
+router.delete('/:id', autorizar('admin', 'entrenador'), ctrl.eliminar);
 
 module.exports = router;

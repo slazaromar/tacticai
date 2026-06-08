@@ -2,7 +2,7 @@ const router   = require('express').Router();
 const { body } = require('express-validator');
 const ctrl     = require('../controllers/alineacion.controlador');
 const validar  = require('../middleware/validar');
-const { autenticar } = require('../middleware/autenticacion');
+const { autenticar, autorizar } = require('../middleware/autenticacion');
 
 router.use(autenticar);
 
@@ -19,6 +19,7 @@ router.post('/recomendar',
 );
 
 router.post('/',
+  autorizar('admin', 'entrenador'),
   body('partidoId').matches(REGEX_UUID).withMessage('partidoId debe ser un UUID'),
   body('equipoId').matches(REGEX_UUID).withMessage('equipoId debe ser un UUID'),
   body('jugadores').isArray({ min: 1 }),

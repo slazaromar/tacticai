@@ -7,7 +7,6 @@ import pandas as pd
 from app.models.esquemas import JugadorEntrada
 
 
-# Mapeo del rol del jugador en su equipo a una puntuación numérica
 PUNTUACION_ROL: Dict[str, float] = {
     "titular":  1.00,
     "rotacion": 0.70,
@@ -17,7 +16,6 @@ PUNTUACION_ROL: Dict[str, float] = {
 
 
 def jugadores_a_dataframe(jugadores: List[JugadorEntrada]) -> pd.DataFrame:
-    """Convierte una lista de JugadorEntrada en un DataFrame con variables derivadas."""
     registros = [j.model_dump() for j in jugadores]
     df = pd.DataFrame(registros)
 
@@ -50,11 +48,6 @@ def jugadores_a_dataframe(jugadores: List[JugadorEntrada]) -> pd.DataFrame:
 
 
 def calcular_puntuaciones(df: pd.DataFrame, pesos: Dict[str, float]) -> pd.DataFrame:
-    """
-    Calcula las puntuaciones de recomendación ponderadas para cada jugador.
-
-    Claves de `pesos`: forma, rol, contrato, general.
-    """
     df = df.copy()
     df["puntuacion_recomendacion"] = (
         pesos["forma"]    * df["forma_norm"]          * 100 +

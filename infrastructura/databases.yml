@@ -37,7 +37,7 @@ Resources:
         - Fn::ImportValue: !Sub tacticai-${Env}-PrivateSubnetA
         - Fn::ImportValue: !Sub tacticai-${Env}-PrivateSubnetB
 
-  # ── RDS PostgreSQL ───────
+  # ── RDS PostgreSQL ───────────────────────────────────────────────
   PostgresDB:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
@@ -53,6 +53,7 @@ Resources:
       MasterUsername:       tacticai_user
       MasterUserPassword:   !Ref DBPassword
       MultiAZ:              false
+      PubliclyAccessible:   false
       DBSubnetGroupName:    !Ref DBSubnetGroup
       VPCSecurityGroups:
         - !Ref RDSSecurityGroup
@@ -63,7 +64,7 @@ Resources:
         - Key: Env
           Value: !Ref Env
 
-  # ── EC2 Security Group for Redis ──────────────────────────────────
+  # ── Security Group for Redis EC2 ─────────────────────────────────
   RedisEC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -76,7 +77,7 @@ Resources:
           ToPort:     6379
           CidrIp:     10.0.0.0/16
 
-  # ── IAM Role for Redis EC2 Instance ───────────────────────────────
+  # ── IAM Role for Redis EC2 (SSM included for administration) ─────
   RedisEC2Role:
     Type: AWS::IAM::Role
     Properties:
@@ -87,6 +88,8 @@ Resources:
             Principal:
               Service: ec2.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   RedisEC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -94,28 +97,34 @@ Resources:
       Roles:
         - !Ref RedisEC2Role
 
-  # ── Redis EC2 Instance ──────────────
+  # ── Redis EC2 Instance ───────────────────────────────────────────
+  # Public subnet for package/SSM endpoint access.
+  # Redis port restricted to VPC CIDR only via security group.
   RedisEC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
       InstanceType: t3.micro
       IamInstanceProfile: !Ref RedisEC2InstanceProfile
       SecurityGroupIds:
         - !Ref RedisEC2SecurityGroup
       SubnetId:
-        Fn::ImportValue: !Sub tacticai-${Env}-PrivateSubnetA
+        Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
       UserData:
         Fn::Base64: !Sub |
-          #!/bin/bash
-          yum update -y
-          yum install -y redis
-          systemctl start redis-server
-          systemctl enable redis-server
-          # Configure Redis to listen on all interfaces
-          sed -i 's/^bind 127.0.0.1/bind 0.0.0.0/' /etc/redis.conf
-          sed -i 's/^# requirepass/requirepass ${RedisAuthToken}/' /etc/redis.conf
-          systemctl restart redis-server
+          #!/bin/bash -x
+          exec > /var/log/user-data.log 2>&1
+
+          # Redis 6 via amazon-linux-extras (yum default repos don't include redis)
+          amazon-linux-extras install redis6 -y
+          sed -i 's/^bind 127.0.0.1.*$/bind 0.0.0.0/' /etc/redis/redis.conf
+          sed -i 's/^# requirepass foobared/requirepass ${RedisAuthToken}/' /etc/redis/redis.conf
+          systemctl enable redis
+          systemctl start redis
+
+          # PostgreSQL 14 client for DB initialisation via SSM Session Manager
+          amazon-linux-extras install postgresql14 -y
+          yum install -y postgresql
       Tags:
         - Key: Name
           Value: !Sub tacticai-${Env}-redis-ec2
@@ -130,3 +139,8 @@ Outputs:
     Value: !GetAtt RedisEC2Instance.PrivateIp
     Export:
       Name: !Sub tacticai-${Env}-RedisEndpoint
+
+  RedisInstanceId:
+    Value: !Ref RedisEC2Instance
+    Export:
+      Name: !Sub tacticai-${Env}-RedisInstanceId

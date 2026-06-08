@@ -3,7 +3,6 @@ const jwt           = require('jsonwebtoken');
 const { consultar } = require('../config/baseDatos');
 const { obtenerRedis } = require('../config/redis');
 
-// Auxiliares
 function generarTokenAcceso(usuario) {
   return jwt.sign(
     { id: usuario.id, correo: usuario.correo, nombre_usuario: usuario.nombre_usuario, rol: usuario.rol },

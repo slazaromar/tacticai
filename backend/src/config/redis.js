@@ -14,7 +14,7 @@ function conectarRedis() {
     });
 
     clienteRedis.once('ready', () => {
-      registrador.info('✅ Redis conectado');
+      registrador.info('Redis conectado');
       resolver(clienteRedis);
     });
     clienteRedis.once('error', (err) => {

@@ -107,6 +107,7 @@ a:hover { color: var(--primary-dark); text-decoration: none; }
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+  color: #fff;
 }
 .btn-primary:active:not(:disabled) { transform: translateY(0); }
 

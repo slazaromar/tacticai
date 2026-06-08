@@ -43,7 +43,6 @@ FORMACIONES: Dict[str, List[Tuple[str, str]]] = {
     ],
 }
 
-# Qué posiciones del jugador encajan en cada slot de la formación
 COMPATIBILIDAD_POSICIONES: Dict[str, List[str]] = {
     "PO":  ["PO"],
     "DFC": ["DFC"],
@@ -75,7 +74,6 @@ def generar_recomendacion(
     formacion: str,
     partido: PartidoEntrada | None = None,
 ) -> RespuestaRecomendacion:
-    """Construye una alineación óptima para la formación dada."""
     pesos     = _obtener_pesos()
     formacion = formacion if formacion in FORMACIONES else "4-3-3"
     slots     = FORMACIONES[formacion]
@@ -86,26 +84,28 @@ def generar_recomendacion(
     df_disponibles    = df[df["disponible"]].copy()
     df_no_disponibles = df[~df["disponible"]].copy()
     ids_seleccionados: set[str] = set()
-    titulares: List[JugadorPuntuado] = []
-    slots_pendientes: List[Tuple[str, str]] = []
+    # Una posición por slot para preservar el orden de la formación
+    titulares_por_slot: List[JugadorPuntuado | None] = [None] * len(slots)
 
     # Primera pasada: cubrir slots con candidatos de posición exacta
-    for slot, etiqueta in slots:
+    for i, (slot, _etiqueta) in enumerate(slots):
         candidatos = df_disponibles[
             (df_disponibles["posicion"] == slot) &
             (~df_disponibles["id"].isin(ids_seleccionados))
         ].sort_values("puntuacion_recomendacion", ascending=False)
 
         if candidatos.empty:
-            slots_pendientes.append((slot, etiqueta))
             continue
 
         fila = candidatos.iloc[0]
         ids_seleccionados.add(fila["id"])
-        titulares.append(_fila_a_jugador(fila, slot, es_titular=True))
+        titulares_por_slot[i] = _fila_a_jugador(fila, slot, es_titular=True)
 
-    # Segunda pasada: cubrir slots pendientes con posiciones compatibles
-    for slot, _etiqueta in slots_pendientes:
+    # Segunda pasada: cubrir slots vacíos con posiciones compatibles
+    for i, (slot, _etiqueta) in enumerate(slots):
+        if titulares_por_slot[i] is not None:
+            continue
+
         compatibles = COMPATIBILIDAD_POSICIONES.get(slot, [slot])
         candidatos  = df_disponibles[
             (df_disponibles["posicion"].isin(compatibles)) &
@@ -125,7 +125,9 @@ def generar_recomendacion(
 
         fila = candidatos.iloc[0]
         ids_seleccionados.add(fila["id"])
-        titulares.append(_fila_a_jugador(fila, slot, es_titular=True))
+        titulares_por_slot[i] = _fila_a_jugador(fila, slot, es_titular=True)
+
+    titulares: List[JugadorPuntuado] = [j for j in titulares_por_slot if j is not None]
     banquillo: List[JugadorPuntuado] = []
     candidatos_banquillo = df_disponibles[~df_disponibles["id"].isin(ids_seleccionados)].sort_values(
         "puntuacion_recomendacion", ascending=False

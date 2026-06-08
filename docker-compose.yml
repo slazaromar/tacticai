@@ -47,19 +47,19 @@ services:
       - tacticai-network
 
   # ──────────────────────────────────────────
-  # Recommendation Engine (FastAPI)
+  # Motor Recomendacion (FastAPI)
   # ──────────────────────────────────────────
-  recommendation-engine:
+  motor-recomendacion:
     build:
-      context: ./recommendation-engine
+      context: ./motor-recomendacion
       dockerfile: Dockerfile
-    container_name: tacticai-recommendation
+    container_name: tacticai-recomendacion
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://tacticai_user:tacticai_password@postgres:5432/tacticai
       - REDIS_URL=redis://:redis_password@redis:6379/0
       - INTERNAL_API_KEY=internal_api_key_change_in_production
-      - DEBUG=true
+      - DEPURAR=false
     ports:
       - "8000:8000"
     depends_on:
@@ -68,7 +68,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./recommendation-engine:/app
+      - ./motor-recomendacion:/app
     networks:
       - tacticai-network
 
@@ -96,8 +96,8 @@ services:
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_SECRET=your_super_secret_refresh_key_change_in_production
       - JWT_REFRESH_EXPIRES_IN=7d
-      - RECOMMENDATION_ENGINE_URL=http://recommendation-engine:8000
-      - RECOMMENDATION_API_KEY=internal_api_key_change_in_production
+      - MOTOR_RECOMENDACION_URL=http://motor-recomendacion:8000
+      - MOTOR_RECOMENDACION_API_KEY=internal_api_key_change_in_production
       - FRONTEND_URL=http://localhost:3000
     ports:
       - "4000:4000"
@@ -106,7 +106,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      recommendation-engine:
+      motor-recomendacion:
         condition: service_started
     volumes:
       - ./backend:/app

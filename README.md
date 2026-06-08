@@ -6,6 +6,7 @@ Aplicación que genera alineaciones recomendadas mediante inteligencia artificia
 
 ### Requisitos
 - **Docker** (v24.0+)
+- **Docker Compose** (v2.20+)
 - **Git**
 
 ### Instalación y Ejecución
@@ -55,17 +56,11 @@ Para instrucciones detalladas de configuración y resolución de problemas, cons
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/your-org/tactic-ai.git
-cd tactic-ai
+git clone https://github.com/slazaromar/tacticai.git
+cd tacticai
 ```
 
-### 2. Configurar las variables de entorno
-```bash
-cp .env.example .env
-# Editar .env con tus valores
-```
-
-### 3. Iniciar todos los servicios
+### 2. Iniciar todos los servicios
 ```bash
 docker-compose up --build
 ```
@@ -95,14 +90,14 @@ Autenticación basada en JWT con tokens de acceso (15 min) y tokens de refresco 
 
 El motor de recomendación puntúa a cada jugador disponible mediante una fórmula ponderada:
 
-$$\text{Puntuación} = w_1 \cdot \text{PuntuaciónForma} + w_2 \cdot \text{PuntuaciónRol} + w_3 \cdot \text{PuntuaciónContrato} + w_4 \cdot \text{PuntuaciónGlobal}$$
+$$\text{Puntuación} = w_1 \cdot \text{PuntuaciónForma} + w_2 \cdot \text{PuntuaciónRol} + w_3 \cdot \text{PuntuaciónGlobal} + w_4 \cdot \text{PuntuaciónContrato}$$
 
 | Factor | Peso | Descripción |
 |--------|------|-------------|
 | Puntuación de Forma | 40% | Rendimiento en partidos recientes (1–10) |
 | Rol en el Equipo | 30% | Titular > Rotación > Reserva > Cantera |
-| Estabilidad del Contrato | 20% | Años restantes de contrato |
-| Puntuación Global | 10% | Calidad general del jugador (1–100) |
+| Puntuación Global | 20% | Calidad general del jugador (1–100) |
+| Estabilidad del Contrato | 10% | Años restantes de contrato |
 
 Los jugadores lesionados o sancionados son excluidos automáticamente.
 
@@ -145,24 +140,26 @@ hotfix/*      ← correcciones críticas en producción
 - **ECR** — Registro de contenedores
 - **Secrets Manager** — Almacenamiento seguro de credenciales
 
-### Desplegar la Infraestructura
-```bash
-cd infrastructure
-./deploy.sh --env production --region eu-west-1
-```
+### Desplegar la Infraestructura (En desarrollo)
+
+1 - Desplegar vpc.yml en AWS Cloudformation
+
+2 - Desplegar databases.yml en AWS Cloudformation
+
+3 - Desplegar ecs.yml en AWS Cloudformation
 
 ---
 
 ## Pruebas
 
 ```bash
-# Pruebas del backend
+# Pruebas del backend (instala dependencias automáticamente)
 cd backend && npm test
 
-# Pruebas del frontend
+# Pruebas del frontend (instala dependencias automáticamente)
 cd frontend && npm test
 
-# Pruebas del motor de recomendación
-cd recommendation-engine && pytest
+# Pruebas del motor de recomendación (crea el venv y lo instala todo automáticamente)
+cd motor-recomendacion && make test
 ```
 

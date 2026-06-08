@@ -8,8 +8,8 @@ export default function SelectorIdioma() {
 
   return (
     <select
-      aria-label={t('common.language')}
-      title={t('common.language')}
+      aria-label={t('comun.language')}
+      title={t('comun.language')}
       value={actual}
       onChange={(e) => i18n.changeLanguage(e.target.value)}
       className="form-select"

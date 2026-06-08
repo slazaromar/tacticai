@@ -9,7 +9,6 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// interceptor: añade el token de acceso
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('tokenAcceso');
@@ -71,7 +70,6 @@ api.interceptors.response.use(
       }
     }
 
-    // Toast para errores que no sean 401
     const mensaje =
       error.response?.data?.mensaje ||
       error.response?.data?.message ||

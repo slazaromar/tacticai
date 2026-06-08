@@ -9,7 +9,6 @@ export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
   const navegar = useNavigate();
 
-  // Restaurar sesión al montar
   useEffect(() => {
     const almacenado = localStorage.getItem('usuario');
     if (almacenado) {

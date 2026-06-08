@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: TacticAI - ECS Cluster, ECR repos y servicios relacionados
+Description: TacticAI - ECS Cluster (Fargate), ECR repos y servicios
 
 Parameters:
   Env:
@@ -31,168 +31,13 @@ Parameters:
     NoEcho: true
 
 Resources:
-  # ── ECR Repositories ─────────────────────────────────────────────
-  FrontendRepo:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub tacticai-frontend
-      LifecyclePolicy:
-        LifecyclePolicyText: |
-          {"rules":[{"rulePriority":1,"description":"Guarda las ultimas 10 imagenes","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}
-
-  BackendRepo:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub tacticai-backend
-
-  RecommendationRepo:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Sub tacticai-recommendation
-
   # ── ECS Cluster ───────────────────────────────────────────────────
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub tacticai-${Env}
 
-  # ── EC2 Instances for ECS ────────────────────
-  EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: ECS EC2 instances - allow from ALB and internal comms
-      VpcId:
-        Fn::ImportValue: !Sub tacticai-${Env}-VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort:   0
-          ToPort:     65535
-          CidrIp:     10.0.0.0/16
-
-  EC2InstanceA:
-    Type: AWS::EC2::Instance
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
-    Properties:
-      ImageId: '{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}'
-      InstanceType: t3.micro
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      NetworkInterfaces:
-        - DeviceIndex: '0'
-          AssociatePublicIpAddress: true
-          SubnetId:
-            Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
-          GroupSet:
-            - !Ref EC2SecurityGroup
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -e
-          yum install -y aws-cfn-bootstrap
-          echo "ECS_CLUSTER=${ECSCluster}" >> /etc/ecs/ecs.config
-          echo "ECS_ENABLE_CONTAINER_METADATA=true" >> /etc/ecs/ecs.config
-          systemctl enable --now ecs || true
-          SIGNAL_EXIT=1
-          for i in $(seq 1 60); do
-            curl -sf http://localhost:51678/v1/metadata | grep -q clusterArn && SIGNAL_EXIT=0 && break
-            sleep 5
-          done
-          /opt/aws/bin/cfn-signal -e $SIGNAL_EXIT --stack ${AWS::StackName} --resource EC2InstanceA --region ${AWS::Region}
-      Tags:
-        - Key: Name
-          Value: !Sub tacticai-${Env}-ecs-node-a
-
-  EC2InstanceB:
-    Type: AWS::EC2::Instance
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
-    Properties:
-      ImageId: '{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}'
-      InstanceType: t3.micro
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      NetworkInterfaces:
-        - DeviceIndex: '0'
-          AssociatePublicIpAddress: true
-          SubnetId:
-            Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetB
-          GroupSet:
-            - !Ref EC2SecurityGroup
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -e
-          yum install -y aws-cfn-bootstrap
-          echo "ECS_CLUSTER=${ECSCluster}" >> /etc/ecs/ecs.config
-          echo "ECS_ENABLE_CONTAINER_METADATA=true" >> /etc/ecs/ecs.config
-          systemctl enable --now ecs || true
-          SIGNAL_EXIT=1
-          for i in $(seq 1 60); do
-            curl -sf http://localhost:51678/v1/metadata | grep -q clusterArn && SIGNAL_EXIT=0 && break
-            sleep 5
-          done
-          /opt/aws/bin/cfn-signal -e $SIGNAL_EXIT --stack ${AWS::StackName} --resource EC2InstanceB --region ${AWS::Region}
-      Tags:
-        - Key: Name
-          Value: !Sub tacticai-${Env}-ecs-node-b
-
-  # ── Service Discovery (Cloud Map) ─────────────────────────────────
-  ServiceDiscoveryNamespace:
-    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
-    Properties:
-      Name: tacticai.local
-      Vpc:
-        Fn::ImportValue: !Sub tacticai-${Env}-VpcId
-
-  BackendDiscoveryService:
-    Type: AWS::ServiceDiscovery::Service
-    Properties:
-      Name: backend
-      NamespaceId: !Ref ServiceDiscoveryNamespace
-      DnsConfig:
-        DnsRecords:
-          - Type: SRV
-            TTL: 10
-        RoutingPolicy: MULTIVALUE
-      HealthCheckCustomConfig:
-        FailureThreshold: 1
-
-  RecomendacionDiscoveryService:
-    Type: AWS::ServiceDiscovery::Service
-    Properties:
-      Name: recomendacion
-      NamespaceId: !Ref ServiceDiscoveryNamespace
-      DnsConfig:
-        DnsRecords:
-          - Type: SRV
-            TTL: 10
-        RoutingPolicy: MULTIVALUE
-      HealthCheckCustomConfig:
-        FailureThreshold: 1
-
   # ── IAM Roles ─────────────────────────────────────────────────────
-  # EC2 Role
-  EC2InstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub tacticai-${Env}-ecs-ec2-instance-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-
-  EC2InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref EC2InstanceRole
-
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -206,15 +51,6 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-      Policies:
-        - PolicyName: SecretsAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:tacticai-*
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -264,21 +100,28 @@ Resources:
           ToPort:     443
           CidrIp:     0.0.0.0/0
 
-  ECSSecurityGroup:
+  # Security group for all Fargate tasks
+  FargateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ECS tasks - allow from ALB
+      GroupDescription: Fargate tasks - inbound from ALB and within VPC
       VpcId:
         Fn::ImportValue: !Sub tacticai-${Env}-VpcId
       SecurityGroupIngress:
+        # Traffic from ALB (frontend :80, backend :4000)
         - IpProtocol: tcp
           FromPort:   0
           ToPort:     65535
           SourceSecurityGroupId: !Ref ALBSecurityGroup
+        # Inter-service communication within VPC (e.g. backend -> recomendacion :8000)
         - IpProtocol: tcp
           FromPort:   0
           ToPort:     65535
           CidrIp:     10.0.0.0/16
+      # All outbound allowed (ECR pulls, DB, Redis, external APIs)
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp:     0.0.0.0/0
 
   # ── Application Load Balancer ─────────────────────────────────────
   ALB:
@@ -292,16 +135,21 @@ Resources:
         - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
         - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetB
 
+  # ip TargetType required for Fargate (awsvpc networking)
   FrontendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub tacticai-${Env}-frontend-tg
       Port:       80
       Protocol:   HTTP
-      TargetType: instance
+      TargetType: ip
       VpcId:
         Fn::ImportValue: !Sub tacticai-${Env}-VpcId
-      HealthCheckPath: /
+      HealthCheckPath:                /
+      HealthCheckIntervalSeconds:     30
+      HealthCheckTimeoutSeconds:      5
+      HealthyThresholdCount:          2
+      UnhealthyThresholdCount:        3
 
   BackendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -309,10 +157,14 @@ Resources:
       Name: !Sub tacticai-${Env}-backend-tg
       Port:       4000
       Protocol:   HTTP
-      TargetType: instance
+      TargetType: ip
       VpcId:
         Fn::ImportValue: !Sub tacticai-${Env}-VpcId
-      HealthCheckPath: /health
+      HealthCheckPath:                /health
+      HealthCheckIntervalSeconds:     30
+      HealthCheckTimeoutSeconds:      5
+      HealthyThresholdCount:          2
+      UnhealthyThresholdCount:        3
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -336,15 +188,50 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref BackendTargetGroup
 
-  # ── Backend Task Definition ──────────────────────
+  # ── Service Discovery (Cloud Map) ─────────────────────────────────
+  ServiceDiscoveryNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: tacticai.local
+      Vpc:
+        Fn::ImportValue: !Sub tacticai-${Env}-VpcId
+
+  # A records work with Fargate awsvpc: resolves to task's private IP
+  BackendDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: backend
+      NamespaceId: !Ref ServiceDiscoveryNamespace
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 10
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  RecomendacionDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: recomendacion
+      NamespaceId: !Ref ServiceDiscoveryNamespace
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 10
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  # ── Backend Task Definition (Fargate / awsvpc) ────────────────────
   BackendTaskDef:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family:                  !Sub tacticai-${Env}-backend
-      NetworkMode:             bridge
-      RequiresCompatibilities: [EC2]
+      NetworkMode:             awsvpc
+      RequiresCompatibilities: [FARGATE]
       Cpu:                     '256'
-      Memory:                  '384'
+      Memory:                  '512'
       ExecutionRoleArn:        !GetAtt ECSTaskExecutionRole.Arn
       TaskRoleArn:             !GetAtt ECSTaskRole.Arn
       ContainerDefinitions:
@@ -352,7 +239,6 @@ Resources:
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/tacticai-backend:${ImageTag}
           PortMappings:
             - ContainerPort: 4000
-              HostPort: 4000
           Environment:
             - Name: NODE_ENV
               Value: production
@@ -378,11 +264,15 @@ Resources:
               Value: !Ref RedisAuthToken
             - Name: JWT_SECRET
               Value: !Ref JWTSecret
+            - Name: JWT_EXPIRES_IN
+              Value: 15m
             - Name: JWT_REFRESH_SECRET
               Value: !Ref JWTRefreshSecret
-            - Name: RECOMMENDATION_ENGINE_URL
-              Value: http://recommendation.tacticai.local:8000
-            - Name: RECOMMENDATION_API_KEY
+            - Name: JWT_REFRESH_EXPIRES_IN
+              Value: 7d
+            - Name: MOTOR_RECOMENDACION_URL
+              Value: http://recomendacion.tacticai.local:8000
+            - Name: MOTOR_RECOMENDACION_API_KEY
               Value: !Ref RecomendacionAPIKey
           LogConfiguration:
             LogDriver: awslogs
@@ -391,40 +281,15 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
 
-  # ── Backend Service ──────────────────────────────────────────
-  BackendService:
-    Type: AWS::ECS::Service
-    DependsOn:
-      - ALBListenerRuleAPI
-      - EC2InstanceA
-      - EC2InstanceB
-    Properties:
-      Cluster:        !Ref ECSCluster
-      TaskDefinition: !Ref BackendTaskDef
-      LaunchType:     EC2
-      DesiredCount:   1
-      HealthCheckGracePeriodSeconds: 60
-      LoadBalancers:
-        - ContainerName: backend
-          ContainerPort: 4000
-          TargetGroupArn: !Ref BackendTargetGroup
-      ServiceRegistries:
-        - RegistryArn: !GetAtt BackendDiscoveryService.Arn
-          ContainerName: backend
-          ContainerPort: 4000
-      DeploymentConfiguration:
-        MinimumHealthyPercent: 50
-        MaximumPercent:        100
-
-  # ── Motor de Recomendación Task Definition ─────────────────────────
+  # ── Motor de Recomendación Task Definition (Fargate / awsvpc) ─────
   RecomendacionTaskDef:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family:                  !Sub tacticai-${Env}-recomendacion
-      NetworkMode:             bridge
-      RequiresCompatibilities: [EC2]
-      Cpu:                     '256'
-      Memory:                  '384'
+      NetworkMode:             awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Cpu:                     '512'
+      Memory:                  '1024'
       ExecutionRoleArn:        !GetAtt ECSTaskExecutionRole.Arn
       TaskRoleArn:             !GetAtt ECSTaskRole.Arn
       ContainerDefinitions:
@@ -432,7 +297,6 @@ Resources:
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/tacticai-recomendacion:${ImageTag}
           PortMappings:
             - ContainerPort: 8000
-              HostPort: 8000
           Environment:
             - Name: INTERNAL_API_KEY
               Value: !Ref RecomendacionAPIKey
@@ -448,37 +312,21 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
 
-  RecomendacionService:
-    Type: AWS::ECS::Service
-    DependsOn:
-      - EC2InstanceA
-      - EC2InstanceB
-    Properties:
-      Cluster:        !Ref ECSCluster
-      TaskDefinition: !Ref RecomendacionTaskDef
-      LaunchType:     EC2
-      DesiredCount:   1
-      ServiceRegistries:
-        - RegistryArn: !GetAtt RecomendacionDiscoveryService.Arn
-          ContainerName: recomendacion
-          ContainerPort: 8000
-
-  # ── Frontend Task Definition (EC2 compatible) ────────────────────
+  # ── Frontend Task Definition (Fargate / awsvpc) ───────────────────
   FrontendTaskDef:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family:                  !Sub tacticai-${Env}-frontend
-      NetworkMode:             bridge
-      RequiresCompatibilities: [EC2]
+      NetworkMode:             awsvpc
+      RequiresCompatibilities: [FARGATE]
       Cpu:                     '256'
-      Memory:                  '256'
+      Memory:                  '512'
       ExecutionRoleArn:        !GetAtt ECSTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name:  frontend
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/tacticai-frontend:${ImageTag}
           PortMappings:
             - ContainerPort: 80
-              HostPort: 80
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -486,22 +334,81 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
 
+  # ── Backend Service ───────────────────────────────────────────────
+  BackendService:
+    Type: AWS::ECS::Service
+    DependsOn: ALBListenerRuleAPI
+    Properties:
+      Cluster:        !Ref ECSCluster
+      TaskDefinition: !Ref BackendTaskDef
+      LaunchType:     FARGATE
+      DesiredCount:   1
+      HealthCheckGracePeriodSeconds: 60
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
+      LoadBalancers:
+        - ContainerName: backend
+          ContainerPort: 4000
+          TargetGroupArn: !Ref BackendTargetGroup
+      ServiceRegistries:
+        - RegistryArn: !GetAtt BackendDiscoveryService.Arn
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent:        200
+
+  # ── Motor de Recomendación Service ───────────────────────────────
+  RecomendacionService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:        !Ref ECSCluster
+      TaskDefinition: !Ref RecomendacionTaskDef
+      LaunchType:     FARGATE
+      DesiredCount:   1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
+      ServiceRegistries:
+        - RegistryArn: !GetAtt RecomendacionDiscoveryService.Arn
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent:        200
+
+  # ── Frontend Service ──────────────────────────────────────────────
   FrontendService:
     Type: AWS::ECS::Service
-    DependsOn:
-      - ALBListener
-      - EC2InstanceA
-      - EC2InstanceB
+    DependsOn: ALBListener
     Properties:
       Cluster:        !Ref ECSCluster
       TaskDefinition: !Ref FrontendTaskDef
-      LaunchType:     EC2
+      LaunchType:     FARGATE
       DesiredCount:   1
       HealthCheckGracePeriodSeconds: 30
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetA
+            - Fn::ImportValue: !Sub tacticai-${Env}-PublicSubnetB
+          SecurityGroups:
+            - !Ref FargateSecurityGroup
       LoadBalancers:
         - ContainerName: frontend
           ContainerPort: 80
           TargetGroupArn: !Ref FrontendTargetGroup
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent:        200
 
 Outputs:
   ALBDNSName:

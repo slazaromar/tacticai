@@ -3,8 +3,8 @@ const { obtenerRedis }              = require('../config/redis');
 const axios                          = require('axios');
 const registrador                    = require('../config/registrador');
 
-const URL_MOTOR  = process.env.RECOMMENDATION_ENGINE_URL || 'http://localhost:8000';
-const CLAVE_MOTOR = process.env.RECOMMENDATION_API_KEY    || '';
+const URL_MOTOR  = process.env.MOTOR_RECOMENDACION_URL || 'http://localhost:8000';
+const CLAVE_MOTOR = process.env.MOTOR_RECOMENDACION_API_KEY    || '';
 const TTL_CACHE  = 5 * 60;
 
 async function recomendar(req, res, next) {
@@ -14,12 +14,8 @@ async function recomendar(req, res, next) {
     const claveCache = `alineacion:recomendar:${partidoId}:${equipoId}:${formacion}`;
     const redis      = obtenerRedis();
     const cacheado   = await redis.get(claveCache);
-    if (cacheado) {
-      registrador.debug(`Hit caché: ${claveCache}`);
-      return res.json({ ...JSON.parse(cacheado), desdeCache: true });
-    }
+    if (cacheado) return res.json(JSON.parse(cacheado));
 
-    // jugadores del equipo
     const { rows: jugadores } = await consultar(
       `SELECT j.*, e.formacion AS formacion_equipo
        FROM jugadores j
@@ -32,7 +28,6 @@ async function recomendar(req, res, next) {
       return res.status(400).json({ mensaje: 'No se han encontrado jugadores para este equipo' });
     }
 
-    // info del partido
     const { rows: partidoRows } = await consultar(
       `SELECT p.*,
               json_build_object('id', el.id, 'nombre', el.nombre) AS equipo_local,
@@ -45,7 +40,6 @@ async function recomendar(req, res, next) {
     );
     const partido = partidoRows[0];
 
-    // llamar al motor de recomendación
     const respuesta = await axios.post(
       `${URL_MOTOR}/api/v1/recomendar`,
       { jugadores, partido, formacion },
